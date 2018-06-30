@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JsonSchemaMigrator.Tests
 {
-    public class V1Dto
+    public class V1Dto : IUpgradeSchema<V2Dto>
     {
         public int IntProperty { get; protected set; }
         public string StringProperty { get; protected set; }
@@ -13,6 +13,11 @@ namespace JsonSchemaMigrator.Tests
         {
             IntProperty = intProperty;
             StringProperty = stringProperty;
+        }
+
+        public V2Dto UpgradeTo()
+        {
+            return new V2Dto(IntProperty, StringProperty, string.Emptys);
         }
     }
 }

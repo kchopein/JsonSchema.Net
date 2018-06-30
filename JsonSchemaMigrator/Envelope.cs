@@ -1,14 +1,22 @@
-﻿namespace JsonSchemaMigrator
+﻿using System;
+
+namespace JsonSchemaMigrator
 {
-    internal class Envelope<T> where T : class
+    internal class Envelope
     {
-        public Envelope(T payload)
+        private Envelope(Type payloadType, object payload)
         {
-            this.PayloadType = typeof(T).FullName;
+            this.PayloadFullyQualifiedName = payloadType.AssemblyQualifiedName;
             this.Payload = payload;
         }
 
-        public string PayloadType { get; }
-        public T Payload { get; }
+        public static Envelope Create<T>(T source)
+            where T : class
+        {
+            return new Envelope(typeof(T), source);
+        }
+
+        public object Payload { get; }
+        public string PayloadFullyQualifiedName { get; }
     }
 }

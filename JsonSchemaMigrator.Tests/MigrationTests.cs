@@ -8,7 +8,7 @@ namespace JsonSchemaMigrator.Tests
     public class MigrationTests
     {
         [TestMethod]
-        public void MigratingV2ToV1_ShouldPopulateAllProperty()
+        public void MigratingV1ToV1_ShouldPopulateAllProperty()
         {
             //Arrange:
             var v1 = new V1Dto(5, "String Value");
@@ -23,7 +23,7 @@ namespace JsonSchemaMigrator.Tests
         }
 
         [TestMethod]
-        public void MigratingV2ToV2_ShouldPopulateRenamedProperty()
+        public void MigratingV1ToV2_ShouldPopulateRenamedProperty()
         {
             //Arrange:
             var v1 = new V1Dto(5, "String Value");
