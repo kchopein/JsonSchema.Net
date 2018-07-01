@@ -6,6 +6,8 @@ namespace JsonSchemaMigrator.Tests
 {
     public class V1Dto : IUpgradeSchema<V2Dto>
     {
+        public static string NewStringProp = "Default";
+
         public int IntProperty { get; protected set; }
         public string StringProperty { get; protected set; }
 
@@ -17,7 +19,7 @@ namespace JsonSchemaMigrator.Tests
 
         public V2Dto UpgradeTo()
         {
-            return new V2Dto(IntProperty, StringProperty, string.Empty);
+            return new V2Dto(IntProperty, StringProperty, NewStringProp);
         }
     }
 }

@@ -22,16 +22,21 @@ namespace JsonSchemaMigrator
             var jsonPayloadType = Type.GetType(payloadAssemblyName.ToString());
             var resultPayload = jsonEnvelope.SelectToken("$.Payload").ToObject(jsonPayloadType);
             
+            while(resultPayload as T == null)
             if(jsonPayloadType != typeof(T))
             {
                 var upgradeInterface = GetUpgradeInterface(jsonPayloadType);
 
-                if(upgradeInterface != null 
-                    && upgradeInterface.GetGenericArguments()[0] == typeof(T))
+                if(upgradeInterface != null)
                 {
-                    return upgradeInterface.GetMethod("UpgradeTo")
-                        .Invoke(resultPayload, null) as T;
+                    resultPayload = upgradeInterface.GetMethod("UpgradeTo")
+                        .Invoke(resultPayload, null);
+                        jsonPayloadType = upgradeInterface.GetGenericArguments()[0];
                 }
+                else
+                    {
+                        throw new InvalidOperationException("No upgrade path found.");
+                    }
             }
 
             return resultPayload as T;

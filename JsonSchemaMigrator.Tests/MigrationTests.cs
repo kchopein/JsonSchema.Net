@@ -35,7 +35,22 @@ namespace JsonSchemaMigrator.Tests
             //Assert:
             v2.IntProperty.Should().Be(v1.IntProperty);
             v2.StringPropertyRenamed.Should().BeEquivalentTo(v1.StringProperty);
-            v2.NewStringProp.Should().BeEmpty();
+            v2.NewStringProp.Should().BeEquivalentTo(V1Dto.NewStringProp);
+        }
+
+        [TestMethod]
+        public void MigratingV1ToV3_ShouldPopulateAllProperties()
+        {
+            //Arrange:
+            var v1 = new V1Dto(5, "String Value");
+            var v1Json = JsonStore.Serialize(v1);
+
+            //Act:
+            var v3 = JsonStore.Deserialize<V3Dto>(v1Json);
+
+            //Assert:
+            v3.IntProp.Should().Be(v1.IntProperty);
+            v3.NewStringProp.Should().BeEquivalentTo(V1Dto.NewStringProp);
         }
     }
 }
