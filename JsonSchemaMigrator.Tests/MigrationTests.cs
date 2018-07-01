@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
+using System;
 
 namespace JsonSchemaMigrator.Tests
 {
@@ -51,6 +52,18 @@ namespace JsonSchemaMigrator.Tests
             //Assert:
             v3.IntProp.Should().Be(v1.IntProperty);
             v3.NewStringProp.Should().BeEquivalentTo(V1Dto.NewStringProp);
+        }
+
+        [TestMethod]
+        public void MigratingV1ToVXWithNoUpgradePath_ShouldThrowAnException()
+        {
+            //Arrange:
+            var v1 = new V1Dto(5, "String Value");
+            var v1Json = JsonStore.Serialize(v1);
+            Action action = () => JsonStore.Deserialize<VXDto>(v1Json);
+
+            //Act:
+            action.Should().Throw<InvalidOperationException>();
         }
     }
 }
