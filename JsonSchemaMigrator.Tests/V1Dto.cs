@@ -17,7 +17,7 @@ namespace JsonSchemaMigrator.Tests
 
         public V2Dto UpgradeTo()
         {
-            return new V2Dto(IntProperty, StringProperty, string.Emptys);
+            return new V2Dto(IntProperty, StringProperty, string.Empty);
         }
     }
 }
