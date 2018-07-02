@@ -5,7 +5,7 @@ The idea behind this little library is to define a way to deal with this in a me
 
 ## Just starting
 
-This project was born 2 days ago at the moment of writing this, so it's still in a very, very, very early stage. Actually I don't spect a lot of people reading this (no one actually). However, you never know, so... if you think this can be usefult and want to contribute, please do it!
+This project was born 2 days ago at the moment of writing this, so it's still in a very, very, very early stage. Actually I don't expect a lot of people reading this (no one actually). However, you never know, so... if you think this can be usefult and want to contribute, please do it!
     
 ## License
 The MIT License ([MIT](https://tldrlegal.com/license/mit-license#summary))
