@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JsonSchemaMigrator.Tests
 {
-    public class V2Dto : IUpgradeSchema<V3Dto>
+    public class V2Dto : IUpgradable<V3Dto>
     {
         public int IntProperty { get; protected set; }
         public string StringPropertyRenamed { get; protected set; }
@@ -17,7 +17,7 @@ namespace JsonSchemaMigrator.Tests
             NewStringProp = newStringProp;
         }
 
-        public V3Dto UpgradeTo()
+        public V3Dto Upgrade()
         {
             return new V3Dto(IntProperty, NewStringProp);
         }

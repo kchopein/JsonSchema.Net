@@ -5,8 +5,19 @@ using System.Linq;
 
 namespace JsonSchemaMigrator
 {
+    /// <summary>
+    /// Serializes and deserializes objects taking into account the serialized type. 
+    /// If the deserialization target type is not the same as the originally used for serialization, it will check if the original type implements
+    /// <seealso cref="IUpgradable{TTarget}"/> and will try to upgrade all the way to the target type.
+    /// </summary>
     public static class JsonStore
     {
+        /// <summary>
+        /// Serializes the specified source.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         public static string Serialize<T>(T source) 
             where T : class
         {
@@ -14,40 +25,50 @@ namespace JsonSchemaMigrator
             return JsonConvert.SerializeObject(envelope);
         }
 
+        /// <summary>
+        /// Deserializes the specified source to the specified type. It will try to find a way to get to that type using <seealso cref="IUpgradable{TTarget}"/> implementations
+        /// present in the source and intermediate types.
+        /// </summary>
+        /// <typeparam name="T">Target type.</typeparam>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">No upgrade path found.</exception>
         public static T Deserialize<T>(string source)
             where T : class
         {
             var jsonEnvelope = JObject.Parse(source);
             var payloadAssemblyName = jsonEnvelope[nameof(Envelope.PayloadFullyQualifiedName)];
-            var jsonPayloadType = Type.GetType(payloadAssemblyName.ToString());
-            var resultPayload = jsonEnvelope.SelectToken("$.Payload").ToObject(jsonPayloadType);
-            
-            while(resultPayload as T == null)
-            if(jsonPayloadType != typeof(T))
-            {
-                var upgradeInterface = GetUpgradeInterface(jsonPayloadType);
+            var payloadType = Type.GetType(payloadAssemblyName.ToString());
+            var payload = jsonEnvelope.SelectToken("$.Payload").ToObject(payloadType);
 
-                if(upgradeInterface != null)
+            while (payload as T == null)
+            {
+                if (payloadType != typeof(T))
                 {
-                    resultPayload = upgradeInterface.GetMethod("UpgradeTo")
-                        .Invoke(resultPayload, null);
-                        jsonPayloadType = upgradeInterface.GetGenericArguments()[0];
-                }
-                else
+                    var upgradeInterface = GetUpgradeInterface(payloadType);
+
+                    if (upgradeInterface != null)
+                    {
+                        payload = upgradeInterface.GetMethod(nameof(IUpgradable<T>.Upgrade))
+                            .Invoke(payload, null);
+                        payloadType = upgradeInterface.GetGenericArguments()[0];
+                    }
+                    else
                     {
                         throw new InvalidOperationException("No upgrade path found.");
                     }
+                }
             }
 
-            return resultPayload as T;
+            return payload as T;
         }
 
-        private static Type GetUpgradeInterface(Type payloadType)
+        static Type GetUpgradeInterface(Type payloadType)
         {
             return payloadType.GetInterfaces()
                 .FirstOrDefault(x =>
                     x.IsGenericType &&
-                    x.GetGenericTypeDefinition() == typeof(IUpgradeSchema<>));
+                    x.GetGenericTypeDefinition() == typeof(IUpgradable<>));
         }
     }
 }
