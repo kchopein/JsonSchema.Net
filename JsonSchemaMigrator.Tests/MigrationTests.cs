@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 
 namespace JsonSchemaMigrator.Tests
 {
@@ -64,6 +65,28 @@ namespace JsonSchemaMigrator.Tests
 
             //Act:
             action.Should().Throw<InvalidOperationException>();
+        }
+
+        [TestMethod]
+        public void WhileMigratingFromV1ToV2_TheCallBackShoulBeInvokedAfterMigration()
+        {
+            //Arrange:
+            var v1 = new V1Dto(5, "String Value");
+            var v1Json = JsonStore.Serialize(v1);
+            var actionContainer = new ActionContainer();
+            var callBackAction = new SchemaUpgradeCallback<V1Dto, V2Dto>();
+            Action action = () => JsonStore.Deserialize<VXDto>(v1Json, new List<Action<>>);
+
+        }
+    }
+
+    public class ActionContainer
+    {
+        public Dictionary<string, object[]> ExecutedActions { get; set; } = new Dictionary<string, object[]>();
+
+        public void Callback<Tsource, Ttarget>(Tsource source, Ttarget target)
+        {
+            this.ExecutedActions.Add($"{nameof(Tsource)} - {nameof(Ttarget)}", new object[] { source, target });
         }
     }
 }
