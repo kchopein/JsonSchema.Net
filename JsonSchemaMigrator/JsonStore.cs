@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace JsonSchemaMigrator
@@ -12,6 +13,8 @@ namespace JsonSchemaMigrator
     /// </summary>
     public static class JsonStore
     {
+        private static Dictionary<string, object> registeredActions = new Dictionary<string, object>();
+
         /// <summary>
         /// Serializes the specified source.
         /// </summary>
@@ -49,9 +52,12 @@ namespace JsonSchemaMigrator
 
                     if (upgradeInterface != null)
                     {
+                        var sourcePayload = payload;
                         payload = upgradeInterface.GetMethod(nameof(IUpgradable<T>.Upgrade))
                             .Invoke(payload, null);
+                        var sourcePayloadType = payloadType;
                         payloadType = upgradeInterface.GetGenericArguments()[0];
+                        InvokeRegisteredActions(sourcePayloadType, payloadType, sourcePayload, payload);
                     }
                     else
                     {
@@ -61,6 +67,25 @@ namespace JsonSchemaMigrator
             }
 
             return payload as T;
+        }
+
+        private static void InvokeRegisteredActions(Type sourcePayloadType, Type payloadType, object sourcePayload, object payload)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static void RegisterAction<TSource, TTarget>(Action<TSource, TTarget> action)
+            where TTarget : class
+            where TSource : class, IUpgradable<TTarget>
+        {
+            InternalRegisterAction(typeof(TSource), typeof(TTarget), action);
+        }
+
+        private static void InternalRegisterAction(Type sourceType, Type targetType, object action)
+        {
+            var key = $"{sourceType.FullName}-{targetType.FullName}";
+            registeredActions.Add(key, action);
+
         }
 
         static Type GetUpgradeInterface(Type payloadType)
