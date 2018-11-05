@@ -68,29 +68,6 @@ namespace JsonSchemaMigrator.Tests
         }
 
         [TestMethod]
-        public void WhileMigratingFromV1ToV2_TheCallBackShoulBeInvokedAfterMigration()
         {
-            //Arrange:
-            var v1 = new V1Dto(5, "String Value");
-            var v1Json = JsonStore.Serialize(v1);
-            var actionContainer = new ActionContainer();
-            JsonStore.RegisterAction<V2Dto, V3Dto>(actionContainer.Callback<V2Dto, V3Dto>);
-
-            //Act:
-            var v3 = JsonStore.Deserialize<V3Dto>(v1Json);
-
-            //Assert:
-            actionContainer.ExecutedActions[$"{nameof(V2Dto)} - {nameof(V3Dto)}"][1].Should().Be(v3);
         }
-    }
-
-    public class ActionContainer
-    {
-        public Dictionary<string, object[]> ExecutedActions { get; set; } = new Dictionary<string, object[]>();
-
-        public void Callback<Tsource, Ttarget>(Tsource source, Ttarget target)
-        {
-            this.ExecutedActions.Add($"{nameof(Tsource)} - {nameof(Ttarget)}", new object[] { source, target });
-        }
-    }
 }
