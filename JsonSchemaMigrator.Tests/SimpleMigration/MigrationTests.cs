@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using System;
 
 namespace JsonSchemaMigrator.Tests
@@ -8,6 +7,17 @@ namespace JsonSchemaMigrator.Tests
     [TestClass]
     public class MigrationTests
     {
+        [TestInitialize]
+        public void InitializeTest()
+        {
+            var migrationHandlerProvider = new DefaultMigrationHandlerProvider();
+            migrationHandlerProvider.AddMigrationHandler(new V1DtoMigrationHandler());
+            migrationHandlerProvider.AddMigrationHandler(new V2DtoMigrationHandler());
+
+            JsonStore.ConfigureMigrationHandlerProvider(migrationHandlerProvider);
+        }
+
+
         [TestMethod]
         public void MigratingV1ToV1_ShouldPopulateAllProperty()
         {
@@ -65,5 +75,9 @@ namespace JsonSchemaMigrator.Tests
             //Act:
             action.Should().Throw<InvalidOperationException>();
         }
+
+        //[TestMethod]
+        //{
+        //}
     }
 }

@@ -4,17 +4,16 @@ using System.Text;
 
 namespace JsonSchemaMigrator.Tests
 {
-    public class VXDto
+    public class V3Dto
     {
         public int IntProp{ get; }
 
         public string NewStringProp { get; protected set; }
 
-        public VXDto(int intProp, string newStringProp)
+        public V3Dto(int intProp, string newStringProp)
         {
             IntProp = intProp;
             NewStringProp = newStringProp;
         }
-
     }
 }

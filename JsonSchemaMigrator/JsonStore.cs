@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace JsonSchemaMigrator
@@ -8,10 +9,14 @@ namespace JsonSchemaMigrator
     /// <summary>
     /// Serializes and deserializes objects taking into account the serialized type. 
     /// If the deserialization target type is not the same as the originally used for serialization, it will check if the original type implements
-    /// <seealso cref="IUpgradable{TTarget}"/> and will try to upgrade all the way to the target type.
+    /// <seealso cref="IMigrationHandler{TTarget}"/> and will try to upgrade all the way to the target type.
     /// </summary>
     public static class JsonStore
     {
+        private static Dictionary<string, object> registeredActions = new Dictionary<string, object>();
+
+        private static IMigrationHandlerProvider migrationHandlerProvider;
+
         /// <summary>
         /// Serializes the specified source.
         /// </summary>
@@ -26,32 +31,33 @@ namespace JsonSchemaMigrator
         }
 
         /// <summary>
-        /// Deserializes the specified source to the specified type. It will try to find a way to get to that type using <seealso cref="IUpgradable{TTarget}"/> implementations
+        /// Deserializes the specified source to the specified type. It will try to find a way to get to that type using <seealso cref="IMigrationHandler{TTarget}"/> implementations
         /// present in the source and intermediate types.
         /// </summary>
-        /// <typeparam name="T">Target type.</typeparam>
+        /// <typeparam name="TTarget">Target type.</typeparam>
         /// <param name="source">The source.</param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException">No upgrade path found.</exception>
-        public static T Deserialize<T>(string source)
-            where T : class
+        public static TTarget Deserialize<TTarget>(string source)
+            where TTarget : class
         {
             var jsonEnvelope = JObject.Parse(source);
             var payloadAssemblyName = jsonEnvelope[nameof(Envelope.PayloadFullyQualifiedName)];
             var payloadType = Type.GetType(payloadAssemblyName.ToString());
             var payload = jsonEnvelope.SelectToken("$.Payload").ToObject(payloadType);
 
-            while (payload as T == null)
+            while (payload as TTarget == null)
             {
-                if (payloadType != typeof(T))
+                if (payloadType != typeof(TTarget))
                 {
-                    var upgradeInterface = GetUpgradeInterface(payloadType);
+                    var migrationHandlerWrapper = GetMigrationHandlerWrapper(payloadType);
 
-                    if (upgradeInterface != null)
+                    if (migrationHandlerWrapper != null)
                     {
-                        payload = upgradeInterface.GetMethod(nameof(IUpgradable<T>.Upgrade))
-                            .Invoke(payload, null);
-                        payloadType = upgradeInterface.GetGenericArguments()[0];
+                        var sourcePayload = payload;
+                        payload = migrationHandlerWrapper.Upgrade(sourcePayload);
+                        var sourcePayloadType = payloadType;
+                        payloadType = migrationHandlerWrapper.UpgradeTargetType;
                     }
                     else
                     {
@@ -60,15 +66,22 @@ namespace JsonSchemaMigrator
                 }
             }
 
-            return payload as T;
+            return payload as TTarget;
         }
 
-        static Type GetUpgradeInterface(Type payloadType)
+        private static MigrationHandlerWrapper GetMigrationHandlerWrapper(Type payloadType)
         {
-            return payloadType.GetInterfaces()
-                .FirstOrDefault(x =>
-                    x.IsGenericType &&
-                    x.GetGenericTypeDefinition() == typeof(IUpgradable<>));
+            var providerMethod = migrationHandlerProvider.GetType().GetMethod(nameof(IMigrationHandlerProvider.GetMigrationHandler));
+            var parameterizedProviderMethod = providerMethod.MakeGenericMethod(payloadType);
+
+            var migrationHandler = parameterizedProviderMethod.Invoke(migrationHandlerProvider, null);
+
+            return migrationHandler != null ? new MigrationHandlerWrapper(migrationHandler): null;
+        }
+
+        public static void ConfigureMigrationHandlerProvider(IMigrationHandlerProvider migrationHandlerProvider)
+        {
+            JsonStore.migrationHandlerProvider = migrationHandlerProvider;
         }
     }
 }
