@@ -4,6 +4,6 @@ namespace JsonSchemaMigrator
 {
     public interface IMigrationHandlerProvider
     {
-        IEnumerable<IMigrationHandler<TSource>> GetMigrationHandlers<TSource>();
+        IMigrationHandler<TSource> GetMigrationHandler<TSource>();
     }
 }

@@ -6,7 +6,7 @@ namespace JsonSchemaMigrator.AutofacProvider
 {
     public class AutofactMigrationHandlerProvider : IMigrationHandlerProvider
     {
-        public IEnumerable<IMigrationHandler<TSource>> GetMigrationHandlers<TSource>()
+        public IMigrationHandler<TSource> GetMigrationHandler<TSource>()
         {
             throw new NotImplementedException();
         }

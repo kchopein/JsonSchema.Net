@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace JsonSchemaMigrator.Tests
+﻿namespace JsonSchemaMigrator.Tests
 {
-    public class V2Dto : IMigrationHandler<V3Dto>
+    public class V2Dto
     {
         public int IntProperty { get; protected set; }
         public string StringPropertyRenamed { get; protected set; }
@@ -15,11 +11,6 @@ namespace JsonSchemaMigrator.Tests
             IntProperty = intProperty;
             StringPropertyRenamed = stringProperty;
             NewStringProp = newStringProp;
-        }
-
-        public V3Dto Upgrade()
-        {
-            return new V3Dto(IntProperty, NewStringProp);
         }
     }
 }

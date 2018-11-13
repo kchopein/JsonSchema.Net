@@ -1,16 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace JsonSchemaMigrator
 {
     public class DefaultMigrationHandlerProvider : IMigrationHandlerProvider
     {
-        private Dictionary<Type, List<object>> migrationHandlers = new Dictionary<Type, List<object>>();
+        private Dictionary<Type, object> migrationHandlers = new Dictionary<Type, object>();
 
-        public IEnumerable<IMigrationHandler<TSource>> GetMigrationHandlers<TSource>()
+        public IMigrationHandler<TSource> GetMigrationHandler<TSource>()
         {
-            throw new NotImplementedException();
+            Type handlerType = typeof(TSource);
+            if (migrationHandlers.ContainsKey(handlerType))
+            {
+                return (IMigrationHandler<TSource>)migrationHandlers[handlerType];
+            }
+
+            return null;
         }
+
+        public void AddMigrationHandler<TSource>(IMigrationHandler<TSource> migrationHandler)
+        {
+            Type handlerType = typeof(TSource);
+            migrationHandlers[handlerType] = migrationHandler;
+        }
+
     }
 }

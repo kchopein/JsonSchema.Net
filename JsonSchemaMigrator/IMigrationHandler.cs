@@ -6,7 +6,7 @@ namespace JsonSchemaMigrator
     /// Specifies how to upgrade an instance of this type to the specified type.
     /// </summary>
     /// <typeparam name="TTarget">The type of the target.</typeparam>
-    public interface IMigrationHandler<TSource>
+    public interface IMigrationHandler<TSource> 
     {
         Type UpgradeTargetType { get; }
         Type DowngradeTargetType { get; }

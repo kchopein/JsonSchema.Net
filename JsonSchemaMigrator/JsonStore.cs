@@ -15,7 +15,7 @@ namespace JsonSchemaMigrator
     {
         private static Dictionary<string, object> registeredActions = new Dictionary<string, object>();
 
-        private static IUpgradeHandler migrationHandlerProvider;
+        private static IMigrationHandlerProvider migrationHandlerProvider;
 
         /// <summary>
         /// Serializes the specified source.
@@ -34,31 +34,30 @@ namespace JsonSchemaMigrator
         /// Deserializes the specified source to the specified type. It will try to find a way to get to that type using <seealso cref="IMigrationHandler{TTarget}"/> implementations
         /// present in the source and intermediate types.
         /// </summary>
-        /// <typeparam name="T">Target type.</typeparam>
+        /// <typeparam name="TTarget">Target type.</typeparam>
         /// <param name="source">The source.</param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException">No upgrade path found.</exception>
-        public static T Deserialize<T>(string source)
-            where T : class
+        public static TTarget Deserialize<TTarget>(string source)
+            where TTarget : class
         {
             var jsonEnvelope = JObject.Parse(source);
             var payloadAssemblyName = jsonEnvelope[nameof(Envelope.PayloadFullyQualifiedName)];
             var payloadType = Type.GetType(payloadAssemblyName.ToString());
             var payload = jsonEnvelope.SelectToken("$.Payload").ToObject(payloadType);
 
-            while (payload as T == null)
+            while (payload as TTarget == null)
             {
-                if (payloadType != typeof(T))
+                if (payloadType != typeof(TTarget))
                 {
-                    var upgradeInterface = GetUpgradeInterface(payloadType);
+                    var migrationHandlerWrapper = GetMigrationHandlerWrapper(payloadType);
 
-                    if (upgradeInterface != null)
+                    if (migrationHandlerWrapper != null)
                     {
                         var sourcePayload = payload;
-                        payload = upgradeInterface.GetMethod(nameof(IMigrationHandler<T>.Up))
-                            .Invoke(payload, null);
+                        payload = migrationHandlerWrapper.Upgrade(sourcePayload);
                         var sourcePayloadType = payloadType;
-                        payloadType = upgradeInterface.GetGenericArguments()[0];
+                        payloadType = migrationHandlerWrapper.UpgradeTargetType;
                     }
                     else
                     {
@@ -67,32 +66,22 @@ namespace JsonSchemaMigrator
                 }
             }
 
-            return payload as T;
+            return payload as TTarget;
         }
 
-        public static void ConfigureMigrationHandlerProvider(IUpgradeHandler migrationHandlerProvider)
+        private static MigrationHandlerWrapper GetMigrationHandlerWrapper(Type payloadType)
+        {
+            var providerMethod = migrationHandlerProvider.GetType().GetMethod(nameof(IMigrationHandlerProvider.GetMigrationHandler));
+            var parameterizedProviderMethod = providerMethod.MakeGenericMethod(payloadType);
+
+            var migrationHandler = parameterizedProviderMethod.Invoke(migrationHandlerProvider, null);
+
+            return migrationHandler != null ? new MigrationHandlerWrapper(migrationHandler): null;
+        }
+
+        public static void ConfigureMigrationHandlerProvider(IMigrationHandlerProvider migrationHandlerProvider)
         {
             JsonStore.migrationHandlerProvider = migrationHandlerProvider;
-        }
-
-        private static void InternalRegisterAction(Type sourceType, Type targetType, object action)
-        {
-            var key = GetActionKey(sourceType, targetType);
-            registeredActions.Add(key, action);
-
-        }
-
-        private static string GetActionKey(Type sourceType, Type targetType)
-        {
-            return $"{sourceType.FullName}-{targetType.FullName}";
-        }
-
-        static Type GetUpgradeInterface(Type payloadType)
-        {
-            return payloadType.GetInterfaces()
-                .FirstOrDefault(x =>
-                    x.IsGenericType &&
-                    x.GetGenericTypeDefinition() == typeof(IMigrationHandler<>));
         }
     }
 }

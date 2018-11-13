@@ -15,6 +15,5 @@ namespace JsonSchemaMigrator.Tests
             IntProp = intProp;
             NewStringProp = newStringProp;
         }
-
     }
 }
